@@ -17,23 +17,36 @@ To install µSuite, please follow these steps (works on Debian):
 (1) **Install GRPC:**
 
 ```
-sudo apt-get install build-essential autoconf libtool curl cmake git pkg-config
+export MY_INSTALL_DIR=$HOME/.local
 
+mkdir -p $MY_INSTALL_DIR
 
-git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+export PATH="$MY_INSTALL_DIR/bin:$PATH"
+
+sudo apt install -y cmake
+
+sudo apt install -y build-essential autoconf libtool pkg-config
+
+git clone --recurse-submodules -b v1.46.3 --depth 1 --shallow-submodules https://github.com/grpc/grpc
 
 cd grpc
 
-git submodule update --init
+mkdir -p cmake/build
 
-make
+pushd cmake/build
 
-sudo make install
-```
+cmake -DgRPC_INSTALL=ON \
+    -DgRPC_BUILD_TESTS=OFF \
+    -DCMAKE_INSTALL_PREFIX=$MY_INSTALL_DIR \
+    ../..
 
-Step out of the GRPC directory.
+make -j
 
-If you have any issues installing GRPC, refer to: https://github.com/grpc/grpc/blob/master/INSTALL.md)
+make install
+
+popd
+
+Source: https://grpc.io/docs/languages/cpp/quickstart/
 
 (2) **Install Protobuf 3.0.0 or higher:**
 
@@ -67,17 +80,18 @@ sudo apt-get install openssl
 
 sudo apt-get install libssl-dev
 
-wget http://registrationcenter-download.intel.com/akdlm/irc_nas/tec/11306/l_mkl_2017.2.174.tgz
+wget -O- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+| gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
 
-tar xzvf l_mkl_2017.2.174.tgz
+echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
 
-cd l_mkl_*
+sudo apt-get update
 
-./install.sh   -> Follow the prompts that appear to install MKL.
-```
+sudo apt install mkl-2021.4.0 
 
-Step back into the MicroSuite directory.
+sudo apt install mkl-devel-2021.4.0
 
+Source: https://www.intel.com/content/www/us/en/develop/documentation/installation-guide-for-intel-oneapi-toolkits-linux/top/installation/install-using-package-managers/apt.html
 
 (4) **Install FLANN:**
 
@@ -113,17 +127,42 @@ Test sets for the load generator can be created as large as you want them to be 
 
 cd src/HDSearch/protoc_files
 
+Paths to "grpc/libs/opt/pkgconfig" and "grpc/libs/opt" must be exported as environment variables: PKG_CONFIG_PATH and LD_LIBRARY_PATH in the ~/.bashrc file
+
+Update the paths of the makefile with the right ones for: grpc and mkl
+
+sudo apt-get install libboost-all-dev
+
+cd /MicroSuite/src/HDSearch/bucket_service/service/helper_files
+
+nano server_helper.cc
+#include <grpc/grpc.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+
+nano client_helper.cc
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpc/status.h>
+
+
 make  ---> It's fine if you have errors, just make sure that the "*.grpc.*" and "*pb.*" files get created.
 
 cd ../bucket_service/service
+
+Update the paths of the makefile with the right ones for: grpc and mkl
 
 make
 
 cd ../../mid_tier_service/service/
 
+Update the paths of the makefile with the right ones for: grpc and mkl
+
 make
 
 cd ../../load_generator/
+
+Update the paths of the makefile with the right ones for: grpc and mkl
 
 make  --> Open loop load generators are used for measuring latency and closed-loop load generators help measure throughput.
 
