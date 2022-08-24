@@ -245,28 +245,30 @@ Note: Simply typing <./binary_file_name> for any of µSuite's microservices will
 
 cd src/HDSearch/bucket_service/service
 
-./bucket_server <dataset file path> <IP address:Port Number> <Mode 1 - read dataset from text file OR Mode 2 - read dataset from binary file <number of bucket server threads> <num of cores: -1 if you want all cores on the machine> <bucket server number> <number of bucket servers in the system>
+./bucket_server dataset file path IP address:Port Number Mode 1 - read dataset from text file OR Mode 2 - read dataset from binary file number of bucket server threads num of cores: -1 if you want all cores on the machine bucket server number number of bucket servers in the system
 
 
 Description of parameters:
 
 (1) dataset file path: ~/MicroSuite/datasets/HDSearch/image_feature_vectors.dat -> Google Open Images Data Source
 
-(2) Mode 1 - read dataset from text file OR Mode 2 - read dataset from binary file -> Input this as 2 since this data set is a binary file.
+(2) IP:port ip adress and port number of the bucket server 
 
-(3) number of bucket server threads -> Number of threads you want to launch to perform your bucket service (this is hardware dependent) e.g., 1 thread.
+(3) Mode 1 - read dataset from text file OR Mode 2 - read dataset from binary file -> Input this as 2 since this data set is a binary file.
 
-(4) num of cores -> Number of cores you want to use; make this the same as the number of threads you want to launch. e.g., 1
+(4) number of bucket server threads -> Number of threads you want to launch to perform your bucket service (this is hardware dependent) e.g., 1 thread.
 
-(5) bucket server number -> If you are launching multiple bucket servers, each bucket server needs to know its ID. e.g., If you have one bucket server, its ID or "bucket server number" is 1.
+(5) num of cores -> Number of cores you want to use; make this the same as the number of threads you want to launch. e.g., 1
 
-(6) number of bucket servers in the system -> this is the total number of bucket servers your set up has e.g., 1.
+(6) bucket server number -> If you are launching multiple bucket servers, each bucket server needs to know its ID. e.g., If you have one bucket server, its ID or "bucket server number" is 1.
+
+(7) number of bucket servers in the system -> this is the total number of bucket servers your set up has e.g., 1.
 
 *To run the mid-tier service:*
 
 cd ../../mid_tier_service/service/
 
-./mid_tier_server <num_hash_tables> <hash_table_key_length> <num_multi_probe_levels> <number_of_bucket_servers> <file containing bucket server IPs> <dataset file path> <mode number: 1 - read dataset from text file, 2 - binary file> <index server IP address> <number of network poller threads> <number of dispatch threads> <number of async response threads> <get profile stats>
+./mid_tier_server num_hash_tables hash_table_key_length num_multi_probe_levels number_of_bucket_servers file containing bucket server IPs dataset file path mode number: 1 - read dataset from text file, 2 - binary file index server IP address number of network poller threads number of dispatch threads number of async response threads get profile stats
 
 Description of parameters:
 
@@ -305,7 +307,7 @@ cd ../../load_generator/
 Run ``load_generator_open_loop`` if you want to measure latency and ``load_generator_closed_loop`` if you want to measure throughput.
 
 
-./load_generator_open_loop <queries file path> <K-NN result file path> <number_of_nearest_neighbors> <Time to run the program> <QPS> <IP to bind to> <timing file name> <QPS file name> <Util file name>
+./load_generator_open_loop queries file path K-NN result file path number_of_nearest_neighbors Time to run the program QPS IP to bind to timing file name QPS file name Util file name
 
 
 Description of parameters:
@@ -342,17 +344,17 @@ A memcached server must be launched for the lookup_server to communicate with. D
 
 (3) **To run Set Algebra:**
 
-./intersection_server (leaf): parameter <path to dataset> -> ls ~/MicroSuite/datasets/SetAlgebra/wordIDs_mapped_to_posting_lists.txt (the available tar file must first be extracted on your machine). 
+./intersection_server (leaf): parameter path to dataset -> ls ~/MicroSuite/datasets/SetAlgebra/wordIDs_mapped_to_posting_lists.txt (the available tar file must first be extracted on your machine). 
 
 Note that you need to create shards of this entire data set depending on the number of leaf servers you have in your set up. e.g., shard0 must be fed as input to leaf server0
 
-./load_generator_open_loop : parameter <queries file path> -> ~/MicroSuite/datasets/SetAlgebra/query_set.txt 
+./load_generator_open_loop : parameter queries file path -> ~/MicroSuite/datasets/SetAlgebra/query_set.txt 
   
 (3) **To run Recommend:**
 
-./cf_server (leaf) : parameters: <dataset file path> -> user_to_movie_ratings.csv (Note that you need to create shards of this entire data set depending on the number of leaf servers you have in your set up. e.g., shard0 must be fed as input to leaf server0)
+./cf_server (leaf) : parameters: dataset file path -> user_to_movie_ratings.csv (Note that you need to create shards of this entire data set depending on the number of leaf servers you have in your set up. e.g., shard0 must be fed as input to leaf server0)
   
-./load_generator_open_loop : parameter: <queries file path> -> ~/MicroSuite/datasets/Recommend/query_set.csv
+./load_generator_open_loop : parameter: queries file path -> ~/MicroSuite/datasets/Recommend/query_set.csv
 
 # Issues
 If you have issues with any of the third party software that MicroSuite uses, you will have to look up issues pertaining to that software; I may not be fully qualified to answer those questions.
