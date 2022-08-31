@@ -1,0 +1,22 @@
+
+# Dataset for HDSearch
+wget https://akshithasriraman.eecs.umich.edu/dataset/HDSearch/image_feature_vectors.dat 
+mv ./image_feature_vectors.dat /home
+
+# Bucket Service Command
+cd /MicroSuite/src/HDSearch/bucket_service/service
+./bucket_server /home/image_feature_vectors.dat 0.0.0.0:50050 2 -1 0 1
+
+# Mid Tier Service - sudo command not found...
+cd /MicroSuite/src/HDSearch/mid_tier_service/service
+touch bucket_servers_IP.txt
+echo "0.0.0.0:50050" > bucket_servers_IP.txt
+./mid_tier_server 1 13 1 1 bucket_servers_IP.txt /home/image_feature_vectors.dat 2 0.0.0.0:50051 1 4 4 0   
+
+# Client 
+cd /MicroSuite/src/HDSearch/load_generator
+mkdir ./results
+./load_generator_open_loop /home/image_feature_vectors.dat ./results/ 1 30 100 0.0.0.0:50051 dummy1 dummy2 dummy3
+
+
+
