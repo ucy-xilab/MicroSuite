@@ -28,27 +28,19 @@ COPY ./MicroSuite /MicroSuite
 CMD ["bash"]
 --------- __File content__ ------------
 
-    
     nano docker-compose.yml
 ----------- File content --------------
 version: "3"
 services:
   hdsearch:
-    build: .
-    stdin_open: true # docker run -i
-    tty: true        # docker run -t
-
-    nano docker-compose.yml
-version: "3"
-services:
-  hdsearch:
-    image: mklean/baseline-microsuite:hdsearchv2
+    image: mklean/baseline-microsuite:hdsearch_router
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     ports:
         - "50050:50050"
         - "50051:50051"
         - "50052:50052"
+        - "11211:11211"
 --------- __File content__ ------------
     
 # Change to docker group
@@ -156,10 +148,48 @@ apt-get install libboost-all-dev
 apt-get install sudo -y
 make
 
+# BELOW NOT WORKING AT THE MOMENT. NOT SURE IF BCC tools are needed for the benchmark. 
+# Nothing is mentioned in the guide but mid-tier is looking form them but doesn't crash. 
+# Below an example on how to install them but that creates further errors
+#_______
+apt-get install bpfcc-tools linux-headers-$(uname -r)
+mkdir /usr/share/bcc/
+mkdir /usr/share/bcc/tools/
+ln -s /usr/sbin/softirqs-bpfcc /usr/share/bcc/tools/softirqs
+ln -s /usr/sbin/runqlat-bpfcc /usr/share/bcc/tools/runqlat
+ln -s /usr/sbin/tcpretrans-bpfcc /usr/share/bcc/tools/tcpretrans
+ln -s /usr/sbin/syscount-bpfcc /usr/share/bcc/tools/syscount
+ln -s /usr/sbin/hardirqs-bpfcc /usr/share/bcc/tools/hardirqs
+#_______
+
 cd ../../load_generator/
 make
 
-Only 16GB available?
+#Router benchmarks
+-------------------
+
+cd /MicroSuite/src/Router/protoc_files
+make clean
+make
+
+cd ../lookup_service/service
+apt -y install libmemcached-dev
+make
+
+cd ../../mid_tier_service/service/
+nano ../../lookup_service/service/helper_files/client_helper.cc
+#include <grpcpp/channel.h>
+make
+
+cd ../../load_generator/
+make
+
+# mecachaded installation for this benchmark. Guide followed -> https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-memcached-on-ubuntu-18-04
+apt install memcached
+apt install libmemcached-tools
+apt install systemd
+service memcached restart
+
 
 Committing image
 ---------------------
