@@ -1,0 +1,3 @@
+# Dataset for Recommend
+wget https://akshithasriraman.eecs.umich.edu/dataset/SetAlgebra/wordIDs_mapped_to_posting_lists.txt
+mv ./wordIDs_mapped_to_posting_lists.txt /home
