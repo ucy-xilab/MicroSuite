@@ -33,7 +33,7 @@ CMD ["bash"]
 version: "3"
 services:
   hdsearch:
-    image: mklean/baseline-microsuite:hdsearch_router
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     ports:
@@ -50,6 +50,8 @@ newgrp docker
 # Run docker compose example
 docker compose up
     
+-----------------------------------------------------------------------------------------------
+
 BASELINE SETUP (While docker compose running) - in new terminal
 ---------------------------------------------
 # Get into the container
@@ -124,7 +126,10 @@ make
 # MLPACK
 apt-get -y install libmlpack-dev
 
-# HDSearch
+-----------------------------------------------------------------------------------------------
+
+# HDSearch benchmark
+-------------------
 cd /MicroSuite/src/HDSearch/protoc_files
 make
 
@@ -165,7 +170,9 @@ ln -s /usr/sbin/hardirqs-bpfcc /usr/share/bcc/tools/hardirqs
 cd ../../load_generator/
 make
 
-#Router benchmarks
+-----------------------------------------------------------------------------------------------
+
+#Router benchmark
 -------------------
 
 cd /MicroSuite/src/Router/protoc_files
@@ -191,6 +198,28 @@ apt install systemd
 service memcached restart
 
 
+-----------------------------------------------------------------------------------------------
+
+#Setalgebra benchmark
+-------------------
+cd /MicroSuite/src/SetAlgebra/protoc_files
+make clean
+make
+
+cd ../intersection_service/service/
+make
+
+cd ../../union_service/service
+nano ../../intersection_service/service/helper_files/client_helper.cc
+#include <grpcpp/channel.h>
+make
+
+cd ../../load_generator/
+make
+
+
+-----------------------------------------------------------------------------------------------
+
 Committing image
 ---------------------
 docker image prune # save space by removing uncessesary/dangling images
@@ -199,7 +228,7 @@ docker system prune --all --force --volumes # remove all unused images and conta
 # commit image
 docker login -u mklean # login to docker
 docker ps
-docker commit microsuite-hdsearch-1
+docker commit <container id>
 docker images
 
 # tag image for 18.4
