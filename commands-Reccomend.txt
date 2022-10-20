@@ -1,3 +1,56 @@
+ssh -i ./.ssh/id_rsa.webmors -p 22 mklean@c220g2-011021.wisc.cloudlab.us
+cd /microsuite/MicroSuite
+sudo docker-compose exec hdsearch sh
+su
+
+
 # Dataset for Recommend
+https://grouplens.org/datasets/movielens/
+wget https://files.grouplens.org/datasets/movielens/ml-25m.zip
+unzip ml-25m.zip
+mv ./ml-25m/ratings.csv /home/user_to_movie_ratings.csv
+
+# Split dataset to multiple shrads, one per cf server 
+# (if only one cf_server then use whole file). 
+# In this example we split in 100 shrads (replace shards_num=100 below with number of shrads you would like)
+rm /home/user_to_movie_ratings_shard*.txt;shards_num=100;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/user_to_movie_ratings.csv)+shards_num-1))/shards_num)) /home/user_to_movie_ratings.csv /home/user_to_movie_ratings_shard
+
+# Produce recommend_query_set.txt of N random lines (100 in this example) from dataset. 
+# Client query set can be as large as we want
+sed 1d /home/user_to_movie_ratings_shard01.txt | shuf -n 100 > /home/recommend_query_set.csv
+
+# Server for shard 01
+cd /MicroSuite/src/Recommend/cf_service/service
+# ./<cf_server> <dataset file path> <IP address:Port Number> <Mode 1 - read dataset from text file OR Mode 2 - read dataset from binary file > <num of cores: -1 if you want all cores on the machine> <cf server number> <number of cf servers in the system>
+./cf_server /home/user_to_movie_ratings_shard00.txt 0.0.0.0:50050 1 1 0 1
+
+# Midtier
+cd /MicroSuite/src/Recommend/recommender_service/service/
+# <./recommender_server> <number of cf servers> <cf server ips file> <ip:port number> <recommender parallelism> <dispatch_parallelism> <number_of_response_threads>
+touch lookup_servers_IP.txt
+echo "0.0.0.0:50050" > lookup_servers_IP.txt
+./mid_tier_server 1 lookup_servers_IP.txt 0.0.0.0:50051 1 1 1
+
+# Load
+cd /MicroSuite/src/Recommend/load_generator/
+mkdir ./results
+# ./<loadgen_recommender_client> <queries file path> <result file path> <Time to run the program> <QPS> <IP to bind to>
+./load_generator_open_loop /home/recommend_query_set.csv results 30 1 0.0.0.0:50051
+
+
+--------------------------------------------------------------------------------
+Large dataset with extremely slow loading issue:
 wget https://akshithasriraman.eecs.umich.edu/dataset/Recommend/user_to_movie_ratings.csv
-mv ./user_to_movie_ratings.csv /home
+mv ./user_to_movie_ratings.csv /home/
+# Convert to LF file
+tr -d "\r" < /home/user_to_movie_ratings.csv > /home/user_to_movie_ratingsnix.csv
+rm /home/user_to_movie_ratings.csv
+mv /home/user_to_movie_ratingsnix.csv /home/user_to_movie_ratings.csv
+
+GDB stops at:
+0x000055bdb2301c8a in double mlpack::amf::AMF<mlpack::amf::SimpleResidueTermination, mlpack::amf::RandomAcolInitialization<5ul>, mlpack::amf::NMFALSUpdate>::Apply<arma::SpMat<double> >(arma::SpMat<double> const&, unsigned long, arma::Mat<double>&, arma::Mat<double>&) ()
+
+0x00007f3132d72ef1 in dgemv_ () from /usr/lib/x86_64-linux-gnu/libblas.so.3
+
+0x00007fc50f855205 in dnrm2_ () from /usr/lib/x86_64-linux-gnu/libblas.so.3
+
