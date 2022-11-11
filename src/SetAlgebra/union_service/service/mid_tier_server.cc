@@ -538,6 +538,7 @@ class IntersectionServiceClient {
         {
             while(true)
             {
+                sleep(1);
                 intersection_srv_connections[0]->AsyncCompleteRpc();
             }
 
@@ -690,16 +691,16 @@ class IntersectionServiceClient {
             }
             std::vector<std::thread> response_threads;
 #if 0
-            std::thread perf(Perf);
+            //std::thread perf(Perf);
 #endif
-            std::thread perf(Perf);
+           /* std::thread perf(Perf);
             std::thread syscount(SysCount);
             std::thread hardirqs(Hardirqs);
             std::thread wakeuptime(Wakeuptime);
             std::thread softirqs(Softirqs);
             std::thread runqlat(Runqlat);
             //std::thread hitm(Hitm);
-            std::thread tcpretrans(Tcpretrans);
+            std::thread tcpretrans(Tcpretrans);*/
 
             for(unsigned int i = 0; i < number_of_response_threads; i++)
             {
@@ -716,16 +717,16 @@ class IntersectionServiceClient {
             }
 
             kill_ack.join();
-            perf.join();
+           /* perf.join();
             syscount.join();
             hardirqs.join();
             wakeuptime.join();
             softirqs.join();
             runqlat.join();
             //hitm.join();
-            tcpretrans.join();
+            tcpretrans.join();*/
 #if 0
-            perf.join();
+            //perf.join();
 #endif
             return 0;
         }

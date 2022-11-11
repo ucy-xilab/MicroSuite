@@ -278,9 +278,12 @@ class UnionServiceClient {
                     query = queries[query_id];
                 }
                 curr_time = (double)GetTimeInMicro();
+                sleep(1);
             }
 
             float achieved_qps = (float)responses_recvd->AtomicallyReadCount()/(float)time_duration;
+            std::cout << "Responses: " << responses_recvd->AtomicallyReadCount() << "\n";
+
 
             global_stats_mutex.lock();
             PrintLatency(*global_stats,

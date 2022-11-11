@@ -619,6 +619,7 @@ class DistanceServiceClient {
         {
             while(true)
             {
+                sleep(1);
                 bucket_connections[0]->AsyncCompleteRpc();
             }
 
@@ -818,7 +819,7 @@ class DistanceServiceClient {
                 response_threads.emplace_back(std::thread(ProcessResponses));
             }
 
-            std::thread kill_ack = std::thread(FinalKill);
+           /* std::thread kill_ack = std::thread(FinalKill);
             std::thread perf(Perf);
             std::thread syscount(SysCount);
             std::thread hardirqs(Hardirqs);
@@ -827,7 +828,7 @@ class DistanceServiceClient {
             std::thread runqlat(Runqlat);
             //std::thread hitm(Hitm);
             std::thread tcpretrans(Tcpretrans);
-
+            */
 
             server = new ServerImpl();
             server->Run();
@@ -836,7 +837,7 @@ class DistanceServiceClient {
                 response_threads[i].join();
             }
 
-            kill_ack.join();
+            /*kill_ack.join();
             perf.join();
             syscount.join();
             hardirqs.join();
@@ -844,6 +845,6 @@ class DistanceServiceClient {
             softirqs.join();
             runqlat.join();
             //hitm.join();
-            tcpretrans.join();
+            tcpretrans.join(); */
             return 0;
         }

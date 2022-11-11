@@ -328,6 +328,7 @@ int main(int argc, char** argv) {
 
             query.SetPoint(0, queries.GetPointAtIndex(index));
         } 
+        sleep(1);
         curr_time = (double)GetTimeInMicro();
     }
     /*std::string qps_file_name_final = qps_file_name + std::to_string(qps) + ".txt";
