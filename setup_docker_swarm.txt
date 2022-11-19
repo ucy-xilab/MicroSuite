@@ -1,0 +1,66 @@
+# Docker swarm
+--------------------------
+# All following commands should be run only on Node 0
+# Close any docker-compose already running through the cloudlab profile
+parallel-ssh -H "node0 node1 node2" -i "cd /microsuite/MicroSuite && sudo docker-compose down"
+# Download dataset on each node
+parallel-ssh -H "node0 node1 node2" -i "cd /microsuite/MicroSuite && sudo wget https://akshithasriraman.eecs.umich.edu/dataset/HDSearch/image_feature_vectors.dat"
+# Creat swarm on Node 0
+sudo docker swarm init --advertise-addr 10.10.1.1
+# Join other nodes on swarm
+ssh node1 sudo docker swarm join --token `sudo docker swarm join-token worker -q` 10.10.1.1:2377
+ssh node2 sudo docker swarm join --token `sudo docker swarm join-token worker -q` 10.10.1.1:2377
+# Confirm nodes joined
+sudo docker node ls
+
+# On node0, create a docker-compose.yml with the following content:
+
+version: "3"
+services:
+  bucket:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50050"
+    cap_add:
+        - SYS_PTRACE
+    command: >
+        bash -c "cd /MicroSuite/src/HDSearch/bucket_service/service
+                ./bucket_server /home/data/image_feature_vectors.dat microsuite_bucket_1.microsuite_default:50050 2 -1 0 1"
+
+  midtier:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50051"
+    cap_add:
+        - SYS_PTRACE      
+    command: >
+        bash -c "while ! echo exit | nc microsuite_bucket_1.microsuite_default 50050; do sleep 1; done
+                echo 'bucket launched'
+                cd /MicroSuite/src/HDSearch/mid_tier_service/service
+                touch bucket_servers_IP.txt
+                echo "microsuite_bucket_1.microsuite_default:50050" > bucket_servers_IP.txt
+                ./mid_tier_server 1 13 1 1 bucket_servers_IP.txt /home/data/image_feature_vectors.dat 2 microsuite_midtier_1.microsuite_default:50051 1 4 4 0"
+
+  client:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    cap_add:
+        - SYS_PTRACE      
+    command: >
+        bash -c "while ! echo exit | nc microsuite_midtier_1.microsuite_default 50051; do sleep 1; done
+                echo 'midtier launched'
+                cd /MicroSuite/src/HDSearch/load_generator
+                mkdir ./results
+                ./load_generator_open_loop /home/data/image_feature_vectors.dat ./results/ 1 30 100 microsuite_midtier_1.microsuite_default:50051 dummy1 dummy2 dummy3"
+                
