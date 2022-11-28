@@ -2,7 +2,7 @@
 # Close any docker-compose already running through the cloudlab profile
 parallel-ssh -H "node0 node1 node2" -i "cd /microsuite/MicroSuite && sudo docker-compose down"
 # Download dataset
-parallel-ssh -H "node0 node1 node2" -i "cd /microsuite/MicroSuite && sudo wget https://akshithasriraman.eecs.umich.edu/dataset/HDSearch/image_feature_vectors.dat"
+cd /microsuite/MicroSuite && sudo wget https://akshithasriraman.eecs.umich.edu/dataset/HDSearch/image_feature_vectors.dat
 # Create swarm on Node 0
 sudo docker swarm init --advertise-addr 10.10.1.1
 # Join other nodes on swarm
