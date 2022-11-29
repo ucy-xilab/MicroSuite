@@ -3,7 +3,6 @@ cd /microsuite/MicroSuite
 sudo docker-compose exec hdsearch sh
 su
 
-
 # Dataset for Recommend
 wget https://www.mlpack.org/datasets/ml-20m/ratings-only.csv.gz
 gunzip ratings-only.csv.gz
@@ -22,7 +21,7 @@ perl missingmovies.pl ratings-only.csv
 # move the resulted file to hope
 mv ./missingmovies.csv /home/missingmovies.csv
 
-# Produce recommend_query_set.txt of N random lines (100 in this example) from the no_ratings.csv dataset. 
+# Produce recommend_query_set.txt of N random lines (100 in this example) from the missingmovies.csv dataset. 
 # Client query set can be as large as we want
 sed 1d /home/missingmovies.csv | shuf -n 100 > /home/recommend_query_set.csv
 
