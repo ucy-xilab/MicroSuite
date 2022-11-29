@@ -5,10 +5,9 @@ su
 
 
 # Dataset for Recommend
-https://grouplens.org/datasets/movielens/
-wget https://files.grouplens.org/datasets/movielens/ml-25m.zip
-unzip ml-25m.zip
-mv ./ml-25m/ratings.csv /home/user_to_movie_ratings.csv
+wget https://www.mlpack.org/datasets/ml-20m/ratings-only.csv.gz
+gunzip ratings-only.csv.gz
+mv ./ratings-only.csv /home/user_to_movie_ratings.csv
 
 # Split dataset to multiple shrads, one per cf server 
 # (if only one cf_server then use whole file). 
