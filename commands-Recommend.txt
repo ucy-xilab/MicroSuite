@@ -14,9 +14,17 @@ mv ./ratings-only.csv /home/user_to_movie_ratings.csv
 # In this example we split in 100 shrads (replace shards_num=100 below with number of shrads you would like)
 rm /home/user_to_movie_ratings_shard*.txt;shards_num=100;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/user_to_movie_ratings.csv)+shards_num-1))/shards_num)) /home/user_to_movie_ratings.csv /home/user_to_movie_ratings_shard
 
-# Produce recommend_query_set.txt of N random lines (100 in this example) from dataset. 
+# Library to process the csv input file to create records of user,movie that have no rating
+sudo apt-get install -y libtext-csv-perl
+
+# Run the script to produce the combinations of users and movies that have no rating
+perl missingmovies.pl ratings-only.csv
+# move the resulted file to hope
+mv ./missingmovies.csv /home/missingmovies.csv
+
+# Produce recommend_query_set.txt of N random lines (100 in this example) from the no_ratings.csv dataset. 
 # Client query set can be as large as we want
-sed 1d /home/user_to_movie_ratings_shard01.txt | shuf -n 100 > /home/recommend_query_set.csv
+sed 1d /home/missingmovies.csv | shuf -n 100 > /home/recommend_query_set.csv
 
 # Server for shard 01
 cd /MicroSuite/src/Recommend/cf_service/service
