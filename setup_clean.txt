@@ -19,7 +19,14 @@
     mkdir microsuite
     cd microsuite
     git clone https://github.com/ucy-xilab/MicroSuite.git
-        
+    cd MicroSuite
+    
+    # Change to docker group
+    sudo newgrp docker
+    
+    # Run docker compose example
+    sudo docker compose up
+    
     nano Dockerfile
 ----------- File content --------------
 # syntax=docker/dockerfile:1
@@ -28,36 +35,24 @@ COPY ./MicroSuite /MicroSuite
 CMD ["bash"]
 --------- __File content__ ------------
 
-    
     nano docker-compose.yml
 ----------- File content --------------
 version: "3"
 services:
   hdsearch:
-    build: .
-    stdin_open: true # docker run -i
-    tty: true        # docker run -t
-
-    nano docker-compose.yml
-version: "3"
-services:
-  hdsearch:
-    image: mklean/baseline-microsuite:hdsearchv2
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
     stdin_open: true # docker run -i
     tty: true        # docker run -t
     ports:
         - "50050:50050"
         - "50051:50051"
         - "50052:50052"
+        - "11211:11211"
 --------- __File content__ ------------
     
-# Change to docker group
-su
-newgrp docker
     
-# Run docker compose example
-docker compose up
-    
+-----------------------------------------------------------------------------------------------
+
 BASELINE SETUP (While docker compose running) - in new terminal
 ---------------------------------------------
 # Get into the container
@@ -132,7 +127,10 @@ make
 # MLPACK
 apt-get -y install libmlpack-dev
 
-# HDSearch
+-----------------------------------------------------------------------------------------------
+
+# HDSearch benchmark
+-------------------
 cd /MicroSuite/src/HDSearch/protoc_files
 make
 
@@ -156,10 +154,93 @@ apt-get install libboost-all-dev
 apt-get install sudo -y
 make
 
+# BELOW NOT WORKING AT THE MOMENT. NOT SURE IF BCC tools are needed for the benchmark. 
+# Nothing is mentioned in the guide but mid-tier is looking form them but doesn't crash. 
+# Below an example on how to install them but that creates further errors
+#_______
+apt-get install bpfcc-tools linux-headers-$(uname -r)
+mkdir /usr/share/bcc/
+mkdir /usr/share/bcc/tools/
+ln -s /usr/sbin/softirqs-bpfcc /usr/share/bcc/tools/softirqs
+ln -s /usr/sbin/runqlat-bpfcc /usr/share/bcc/tools/runqlat
+ln -s /usr/sbin/tcpretrans-bpfcc /usr/share/bcc/tools/tcpretrans
+ln -s /usr/sbin/syscount-bpfcc /usr/share/bcc/tools/syscount
+ln -s /usr/sbin/hardirqs-bpfcc /usr/share/bcc/tools/hardirqs
+#_______
+
 cd ../../load_generator/
 make
 
-Only 16GB available?
+-----------------------------------------------------------------------------------------------
+
+#Router benchmark
+-------------------
+
+cd /MicroSuite/src/Router/protoc_files
+make clean
+make
+
+cd ../lookup_service/service
+apt -y install libmemcached-dev
+make
+
+cd ../../mid_tier_service/service/
+nano ../../lookup_service/service/helper_files/client_helper.cc
+#include <grpcpp/channel.h>
+make
+
+cd ../../load_generator/
+make
+
+# mecachaded installation for this benchmark. Guide followed -> https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-memcached-on-ubuntu-18-04
+apt install memcached
+apt install libmemcached-tools
+apt install systemd
+service memcached restart
+
+
+-----------------------------------------------------------------------------------------------
+
+#Setalgebra benchmark
+-------------------
+cd /MicroSuite/src/SetAlgebra/protoc_files
+make clean
+make
+
+cd ../intersection_service/service/
+make
+
+cd ../../union_service/service
+nano ../../intersection_service/service/helper_files/client_helper.cc
+#include <grpcpp/channel.h>
+make
+
+cd ../../load_generator/
+make
+
+#Reccomend benchmark
+-------------------
+cd /MicroSuite/src/Recommend/protoc_files
+make
+
+cd /MicroSuite/src/Recommend/cf_service/service/
+nano +280 cf_server.cc
+CF cf_matrix(dataset, amf::NMFALSFactorizer(), 5, 5);    
+//cf_matrix = new CF(dataset, amf::NMFALSFactorizer(), 5, 5);    
+//cf_matrix->Init();
+
+nano helper_files/client_helper.cc
+#include <grpcpp/channel.h>
+make
+
+cd ../../recommender_service/service/
+make
+
+cd ../../load_generator/
+make
+
+
+-----------------------------------------------------------------------------------------------
 
 Committing image
 ---------------------
@@ -167,22 +248,25 @@ docker image prune # save space by removing uncessesary/dangling images
 docker system prune --all --force --volumes # remove all unused images and containers 
 
 # commit image
-docker login -u mklean # login to docker
-docker ps
-docker commit microsuite-hdsearch-1
-docker images
+sudo docker login -u mklean # login to docker
+sudo docker ps
+sudo docker commit <container id>
+sudo docker images
 
 # tag image for 18.4
-docker image tag d061174c1dfb mklean/baseline-microsuite
+sudo docker image tag d061174c1dfb mklean/baseline-microsuite
 # push image
-docker push mklean/baseline-microsuite:latest 
+sudo docker push mklean/baseline-microsuite:latest 
 
-docker image tag d061174c1dfb mklean/baseline-microsuite:hdsearch
-docker push mklean/baseline-microsuite:hdsearch
+sudo docker image tag d061174c1dfb mklean/baseline-microsuite:hdsearch
+sudo docker push mklean/baseline-microsuite:hdsearch
 
-docker image tag d061174c1dfb mklean/baseline-microsuite:hdsearchv2
-docker push mklean/baseline-microsuite:hdsearchv2
+sudo docker image tag d061174c1dfb mklean/baseline-microsuite:hdsearchv2
+sudo docker push mklean/baseline-microsuite:hdsearchv2
+
+sudo docker image tag d061174c1dfb mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+sudo docker push mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
 
 # Find the IP using
-docker network ls
-docker inspect  <NETWORK ID>
+sudo docker network ls
+sudo docker inspect  <NETWORK ID>

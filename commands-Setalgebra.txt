@@ -1,0 +1,30 @@
+# Dataset for Set algebra
+wget https://akshithasriraman.eecs.umich.edu/dataset/SetAlgebra/wordIDs_mapped_to_posting_lists.txt
+mv ./wordIDs_mapped_to_posting_lists.txt /home
+
+# Split dataset to multiple shrads, one per insersection intersection_server 
+# (if only one intersection_server then use whole file). 
+# In this example we split in 10 shrads (replace shards_num=10 below with number of shrads you would like)
+rm /home/setalgebra_shrad*.txt;shrads_num=10;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/wordIDs_mapped_to_posting_lists.txt)+shrads_num-1))/shrads_num)) /home/wordIDs_mapped_to_posting_lists.txt /home/setalgebra_shrad
+
+# Produce setalgebra_query_set.txt of N random lines (100 in this example) from dataset. 
+# Client query set can be as large as we want
+shuf -n 100 /home/wordIDs_mapped_to_posting_lists.txt > /home/setalgebra_query_set.txt
+
+# Interesection server
+#./<intersection_server> <IP address:Port Number> <path to dataset> <num of cores: -1 if you want all cores on the machine> <intersection server number> <number of intersection servers in the system>
+cd /MicroSuite/src/SetAlgebra/intersection_service/service/
+./intersection_server 0.0.0.0:50050 /home/setalgebra_shrad00.txt 1 1 1
+
+# Mid tier
+#<./union_server> <number of intersection servers> <intersection server ips file> <ip:port number> <union parallelism>  <union parallelism>  <union parallelism> <dispatch parallelism> <number of response threads>
+cd /MicroSuite/src/SetAlgebra/union_service/service/
+touch lookup_servers_IP.txt
+echo "0.0.0.0:50050" > lookup_servers_IP.txt
+./mid_tier_server 1 lookup_servers_IP.txt 0.0.0.0:50051 1 1 1
+
+# Client
+# ./<loadgen_union_client> <queries file path> <result file path> <Time to run the program> <QPS> <IP to bind to>
+cd /MicroSuite/src/SetAlgebra/load_generator
+mkdir ./results
+./load_generator_open_loop /home/setalgebra_query_set.txt ./results 30 1000 0.0.0.0:50051

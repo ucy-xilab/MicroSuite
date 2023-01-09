@@ -1,0 +1,112 @@
+# Docker swarm
+--------------------------
+# All following commands should be run only on Node 0
+# Close any docker-compose already running through the cloudlab profile
+parallel-ssh -H "node0 node1 node2" -i "cd /microsuite/MicroSuite && sudo docker-compose down"
+# Download dataset
+parallel-ssh -H "node0 node1 node2" -i "cd /microsuite/MicroSuite && sudo wget https://akshithasriraman.eecs.umich.edu/dataset/HDSearch/image_feature_vectors.dat"
+# Create swarm on Node 0
+sudo docker swarm init --advertise-addr 10.10.1.1
+# Join other nodes on swarm
+ssh node1 sudo docker swarm join --token `sudo docker swarm join-token worker -q` 10.10.1.1:2377
+ssh node2 sudo docker swarm join --token `sudo docker swarm join-token worker -q` 10.10.1.1:2377
+# Confirm nodes joined
+sudo docker node ls
+
+export NODE0=$(ssh node0 hostname)
+export NODE1=$(ssh node1 hostname)
+export NODE2=$(ssh node2 hostname)
+
+cd /microsuite/MicroSuite
+sudo docker stack deploy --compose-file=docker-compose-swarm.yml microsuite
+
+ssh -i ./.ssh/id_rsa.webmors -p 22 mklean@c220g1-030630.wisc.cloudlab.us
+# Check services
+sudo docker stack services microsuite
+
+# Check logs
+sudo docker service logs --raw microsuite_bucket
+sudo docker service logs --raw microsuite_midtier
+
+# Check a service, e.g. client
+ssh node0
+sudo docker exec -ti $(sudo docker ps --filter name=microsuite_bucket.1* -q) bash
+
+ssh node1
+sudo docker exec -ti $(sudo docker ps --filter name=microsuite_midtier.1* -q) bash
+
+ssh node2
+sudo docker exec -ti $(sudo docker ps --filter name=microsuite_client.1* -q) bash
+
+# Close swarm
+sudo docker stack rm microsuite
+sudo docker stack deploy --compose-file=docker-compose-swarm.yml microsuite
+
+# On node0, create a docker-compose.yml with the following content:
+version: "3"
+services:
+  bucket:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50050"
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE0}"]
+    command: >
+        bash -c "wget https://akshithasriraman.eecs.umich.edu/dataset/HDSearch/image_feature_vectors.dat
+                mv image_feature_vectors.dat /home
+                cd /MicroSuite/src/HDSearch/bucket_service/service
+                ./bucket_server /home/image_feature_vectors.dat 0.0.0.0:50050 2 -1 0 1"
+
+  midtier:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50051"
+    cap_add:
+        - SYS_PTRACE      
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE1}"]
+    command: >
+        bash -c "cp /home/data/image_feature_vectors.dat /home
+                while ! echo exit | nc bucket 50050; do sleep 1; done
+                echo 'bucket launched'
+                cd /MicroSuite/src/HDSearch/mid_tier_service/service
+                touch bucket_servers_IP.txt
+                echo "bucket:50050" > bucket_servers_IP.txt
+                ./mid_tier_server 1 13 1 1 bucket_servers_IP.txt /home/image_feature_vectors.dat 2 0.0.0.0:50051 1 4 4 0"
+
+  client:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    cap_add:
+        - SYS_PTRACE      
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE2}"]
+    command: >
+        bash -c "cp /home/data/image_feature_vectors.dat /home
+                while ! echo exit | nc midtier 50051; do sleep 1; done
+                echo 'midtier launched'
+                cd /MicroSuite/src/HDSearch/load_generator
+                mkdir ./results
+                ./load_generator_open_loop /home/image_feature_vectors.dat ./results/ 1 30 100 midtier:50051 dummy1 dummy2 dummy3"

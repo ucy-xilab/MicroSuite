@@ -1,0 +1,24 @@
+# Dataset for Router
+wget https://akshithasriraman.eecs.umich.edu/dataset/Router/twitter_requests_data_set.dat
+wget https://akshithasriraman.eecs.umich.edu/dataset/Router/twitter_requests_data_set.txt
+mv ./twitter_requests_data_set.dat /home
+mv ./twitter_requests_data_set.txt /home
+
+# Memchache server - confirm it runs
+service memcached restart
+
+#Lookup service command
+cd /MicroSuite/src/Router/lookup_service/service
+./lookup_server 0.0.0.0:50050 11211 -1 1
+
+# Mid tier
+cd /MicroSuite/src/Router/mid_tier_service/service/
+touch lookup_servers_IP.txt
+echo "0.0.0.0:50050" > lookup_servers_IP.txt
+./mid_tier_server 1 lookup_servers_IP.txt 0.0.0.0:50051 1 1 1 1
+
+
+# Client
+cd /MicroSuite/src/Router/load_generator
+mkdir ./results
+./load_generator_closed_loop /home/twitter_requests_data_set.dat ./results 30 1000 0.0.0.0:50051 1 1
