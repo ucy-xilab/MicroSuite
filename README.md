@@ -361,7 +361,7 @@ ldconfig
 cd ../
 
 ```
-# OpenSSL and Intel's MKL
+## OpenSSL and Intel's MKL
 ```
 apt-get -y install openssl
 apt-get -y install libssl-dev
@@ -373,7 +373,7 @@ cd l_mkl_2018.2.199
 cd ../
 
 ```
-# FLAN
+## FLAN
 ```
 cd /MicroSuite/src/HDSearch/mid_tier_service/
 mkdir build
@@ -383,12 +383,12 @@ make install
 make
 
 ```
-# MLPACK
+## MLPACK
 ```
 apt-get -y install libmlpack-dev
 ```
 
-# HDSearch benchmark
+## HDSearch benchmark
 ```
 cd /MicroSuite/src/HDSearch/protoc_files
 make
@@ -417,7 +417,7 @@ cd ../../load_generator/
 make
 ```
 
-#Router benchmark
+## Router benchmark
 ```
 cd /MicroSuite/src/Router/protoc_files
 make clean
@@ -436,7 +436,7 @@ cd ../../load_generator/
 make
 
 ```
-# mecachaded installation for this benchmark. Guide followed -> https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-memcached-on-ubuntu-18-04
+## mecachaded installation for this benchmark. Guide followed -> https://www.digitalocean.com/community/tutorials/how-to-install-and-secure-memcached-on-ubuntu-18-04
 ```
 apt install memcached
 apt install libmemcached-tools
@@ -444,7 +444,7 @@ apt install systemd
 service memcached restart
 
 ```
-#Setalgebra benchmark
+## Setalgebra benchmark
 ```
 cd /MicroSuite/src/SetAlgebra/protoc_files
 make clean
@@ -462,7 +462,7 @@ cd ../../load_generator/
 make
 
 ```
-#Recommend benchmark
+## Recommend benchmark
 ```
 cd /MicroSuite/src/Recommend/protoc_files
 make
