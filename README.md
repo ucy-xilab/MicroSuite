@@ -32,7 +32,7 @@ sudo apt -y install docker-compose
 ```
 sudo apt -y install gnupg2 pass 
 ```
-# change the storage folder for more space to commit the image (in our case when we use Cloudlab)
+## change the storage folder for more space to commit the image (in our case when we use Cloudlab)
 ```
 sudo docker rm -f $(docker ps -aq); docker rmi -f $(docker images -q)
 sudo systemctl stop docker
@@ -52,11 +52,11 @@ cd microsuite
 git clone https://github.com/ucy-xilab/MicroSuite.git
 cd MicroSuite
 ```
-# Change to docker group
+## Change to docker group
 ```
 sudo newgrp docker
 ```
-# Run docker compose
+## Run docker compose
 ```
 sudo docker compose up
 ```
@@ -72,20 +72,20 @@ From this point on we can execute each benchmark based on the commands provided 
 
 # (3) ** Run a multinode execution **
 
-# All following commands should be run only on Node 0
-# Close any docker-compose already running through the cloudlab profile
+## All following commands should be run only on Node 0
+## Close any docker-compose already running through the cloudlab profile
 ```
 parallel-ssh -H "node0 node1 node2" -i "cd /microsuite/MicroSuite && sudo docker-compose down"
 ```
-# Download dataset
+## Download dataset
 ```
 cd /microsuite/MicroSuite && sudo wget https://akshithasriraman.eecs.umich.edu/dataset/HDSearch/image_feature_vectors.dat
 ```
-# Create swarm on Node 0
+## Create swarm on Node 0
 ```
 sudo docker swarm init --advertise-addr 10.10.1.1
 ```
-# Join other nodes on swarm
+## Join other nodes on swarm
 ```
 parallel-ssh -H "node1" -i "sudo docker swarm join --token `sudo docker swarm join-token worker -q` 10.10.1.1:2377"
 parallel-ssh -H "node2" -i "sudo docker swarm join --token `sudo docker swarm join-token worker -q` 10.10.1.1:2377"
@@ -126,21 +126,21 @@ sudo docker stack deploy --compose-file=docker-compose-swarm.yml microsuite
 
 # (4) ** Run benchmarks **
 
-# ** HDSearch **
+## ** HDSearch **
 
-# Dataset for HDSearch
+### Dataset for HDSearch
 ```
 wget https://akshithasriraman.eecs.umich.edu/dataset/HDSearch/image_feature_vectors.dat 
 mv ./image_feature_vectors.dat /home
 
 ```
-# Bucket Service Command
+### Bucket Service Command
 ```
 cd /MicroSuite/src/HDSearch/bucket_service/service
 ./bucket_server /home/image_feature_vectors.dat 0.0.0.0:50050 2 -1 0 1
 
 ```
-# Mid Tier Service - sudo command not found...
+### Mid Tier Service - sudo command not found...
 ```
 cd /MicroSuite/src/HDSearch/mid_tier_service/service
 touch bucket_servers_IP.txt
@@ -148,7 +148,7 @@ echo "0.0.0.0:50050" > bucket_servers_IP.txt
 ./mid_tier_server 1 13 1 1 bucket_servers_IP.txt /home/image_feature_vectors.dat 2 0.0.0.0:50051 1 4 4 0   
 
 ```
-# Client 
+### Client 
 ```
 cd /MicroSuite/src/HDSearch/load_generator
 mkdir ./results
@@ -156,9 +156,9 @@ mkdir ./results
 
 ```
 
-# ** Router **
+## ** Router **
 
-# Dataset for Router
+### Dataset for Router
 ```
 wget https://akshithasriraman.eecs.umich.edu/dataset/Router/twitter_requests_data_set.dat
 wget https://akshithasriraman.eecs.umich.edu/dataset/Router/twitter_requests_data_set.txt
@@ -166,18 +166,18 @@ mv ./twitter_requests_data_set.dat /home
 mv ./twitter_requests_data_set.txt /home
 
 ```
-# Memchache server - confirm it runs
+### Memchache server - confirm it runs
 ```
 service memcached restart
 
 ```
-# Lookup service command
+### Lookup service command
 ```
 cd /MicroSuite/src/Router/lookup_service/service
 ./lookup_server 0.0.0.0:50050 11211 -1 1
 
 ```
-# Mid tier
+### Mid tier
 ```
 cd /MicroSuite/src/Router/mid_tier_service/service/
 touch lookup_servers_IP.txt
@@ -186,103 +186,104 @@ echo "0.0.0.0:50050" > lookup_servers_IP.txt
 
 
 ```
-# Client
+### Client
 ```
 cd /MicroSuite/src/Router/load_generator
 mkdir ./results
 ./load_generator_closed_loop /home/twitter_requests_data_set.dat ./results 30 1000 0.0.0.0:50051 1 1
 ```
 
-# ** SetAlgebra **
+## ** SetAlgebra **
 
-# Dataset for Set algebra
+### Dataset for Set algebra
 ```
 wget https://akshithasriraman.eecs.umich.edu/dataset/SetAlgebra/wordIDs_mapped_to_posting_lists.txt
 mv ./wordIDs_mapped_to_posting_lists.txt /home
 
 ```
-# Split dataset to multiple shrads, one per insersection intersection_server 
-# (if only one intersection_server then use whole file). 
-# In this example we split in 10 shrads (replace shards_num=10 below with number of shrads you would like)
+### Split dataset to multiple shrads, one per insersection intersection_server 
+### (if only one intersection_server then use whole file). 
+### In this example we split in 10 shrads (replace shards_num=10 below with number of shrads you would like)
 ```
 rm /home/setalgebra_shrad*.txt;shrads_num=10;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/wordIDs_mapped_to_posting_lists.txt)+shrads_num-1))/shrads_num)) /home/wordIDs_mapped_to_posting_lists.txt /home/setalgebra_shrad
 
 ```
-# Produce setalgebra_query_set.txt of N random lines (100 in this example) from dataset. 
-# Client query set can be as large as we want
+### Produce setalgebra_query_set.txt of N random lines (100 in this example) from dataset. 
+### Client query set can be as large as we want
 ```
 shuf -n 100 /home/wordIDs_mapped_to_posting_lists.txt > /home/setalgebra_query_set.txt
 
 ```
-# Interesection server
-#./<intersection_server> <IP address:Port Number> <path to dataset> <num of cores: -1 if you want all cores on the machine> <intersection server number> <number of intersection servers in the system>
+### Interesection server
+### ./<intersection_server> \<IP address:Port Number> \<path to dataset> <num of cores: -1 if you want all cores on the machine> \<intersection server number> \<number of intersection servers in the system>
 ```
 cd /MicroSuite/src/SetAlgebra/intersection_service/service/
 ./intersection_server 0.0.0.0:50050 /home/setalgebra_shrad00.txt 1 1 1
 
 ```
-# Mid tier
-#<./union_server> <number of intersection servers> <intersection server ips file> <ip:port number> <union parallelism>  <union parallelism>  <union parallelism> <dispatch parallelism> <number of response threads>
+  
+### Mid tier
+### <./union_server> \<number of intersection servers> \<intersection server ips file> <ip:port number> \<union parallelism> \<union parallelism> \<union parallelism> \<dispatch parallelism> \<number of response threads>
 ```
 cd /MicroSuite/src/SetAlgebra/union_service/service/
 touch lookup_servers_IP.txt
 echo "0.0.0.0:50050" > lookup_servers_IP.txt
 ./mid_tier_server 1 lookup_servers_IP.txt 0.0.0.0:50051 1 1 1
-
 ```
-# Client
-# ./<loadgen_union_client> <queries file path> <result file path> <Time to run the program> <QPS> <IP to bind to>
+
+### Client
+### ./<loadgen_union_client> \<queries file path> \<result file path> \<Time to run the program> \<QPS> \<IP to bind to>
 ```
 cd /MicroSuite/src/SetAlgebra/load_generator
 mkdir ./results
 ./load_generator_open_loop /home/setalgebra_query_set.txt ./results 30 1000 0.0.0.0:50051
 ```
 
-# ** Recommend **
+## ** Recommend **
 
-# Dataset for Recommend
+### Dataset for Recommend
 ```
 wget https://www.mlpack.org/datasets/ml-20m/ratings-only.csv.gz
 gunzip ratings-only.csv.gz
 mv ./ratings-only.csv /home/user_to_movie_ratings.csv
 
 ```
-# Split dataset to multiple shrads, one per cf server 
-# (if only one cf_server then use whole file). 
-# In this example we split in 100 shrads (replace shards_num=100 below with number of shrads you would like)
+### Split dataset to multiple shrads, one per cf server 
+### (if only one cf_server then use whole file). 
+### In this example we split in 100 shrads (replace shards_num=100 below with number of shrads you would like)
 ```
 rm /home/user_to_movie_ratings_shard*.txt;shards_num=100;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/user_to_movie_ratings.csv)+shards_num-1))/shards_num)) /home/user_to_movie_ratings.csv /home/user_to_movie_ratings_shard
 
 ```
-# Library to process the csv input file to create records of user,movie that have no rating
+### Library to process the csv input file to create records of user,movie that have no rating
 ```
 sudo apt-get install -y libtext-csv-perl
 
 ```
-# Run the script to produce the combinations of users and movies that have no rating
+### Run the script to produce the combinations of users and movies that have no rating
 ```
 perl missingmovies.pl ratings-only.csv
 ```
-# move the resulted file to hope
+### move the resulted file to home
 ```
 mv ./missingmovies.csv /home/missingmovies.csv
 
 ```
-# Produce recommend_query_set.txt of N random lines (100 in this example) from the missingmovies.csv dataset. 
-# Client query set can be as large as we want
+### Produce recommend_query_set.txt of N random lines (100 in this example) from the missingmovies.csv dataset. 
+### Client query set can be as large as we want
 ```
 sed 1d /home/missingmovies.csv | shuf -n 100 > /home/recommend_query_set.csv
 
 ```
-# Server for shard 01
+### Server for shard 01
+### ./<cf_server> <dataset file path> <IP address:Port Number> <Mode 1 - read dataset from text file OR Mode 2 - read dataset from binary file > <num of cores: -1 if you want all cores on the machine> <cf server number> <number of cf servers in the system>
 ```
 cd /MicroSuite/src/Recommend/cf_service/service
-# ./<cf_server> <dataset file path> <IP address:Port Number> <Mode 1 - read dataset from text file OR Mode 2 - read dataset from binary file > <num of cores: -1 if you want all cores on the machine> <cf server number> <number of cf servers in the system>
 ./cf_server /home/user_to_movie_ratings_shard00.txt 0.0.0.0:50050 1 1 0 1
 
 ```
-# Midtier
-# <./recommender_server> <number of cf servers> <cf server ips file> <ip:port number> <recommender parallelism> <dispatch_parallelism> <number_of_response_threads>
+### Midtier
+### <./recommender_server> <number of cf servers> <cf server ips file> <ip:port number> <recommender parallelism> <dispatch_parallelism> <number_of_response_threads>
 ```
 cd /MicroSuite/src/Recommend/recommender_service/service/
 touch lookup_servers_IP.txt
@@ -290,17 +291,17 @@ echo "0.0.0.0:50050" > lookup_servers_IP.txt
 ./mid_tier_server 1 lookup_servers_IP.txt 0.0.0.0:50051 1 1 1
 
 ```
-# Load
-# ./<loadgen_recommender_client> <queries file path> <result file path> <Time to run the program> <QPS> <IP to bind to>
+### Load
+### ./<loadgen_recommender_client> <queries file path> <result file path> <Time to run the program> <QPS> <IP to bind to>
 ```
 cd /MicroSuite/src/Recommend/load_generator/
 mkdir ./results
 ./load_generator_open_loop /home/recommend_query_set.csv results 30 1 0.0.0.0:50051
 ```
 
-(5) ** Commands used to compile the benchmarks and prepare the docker image **
+# (5) ** Commands used to compile the benchmarks and prepare the docker image **
 
-# Install dependancies for microsuite
+## Install dependancies for microsuite
 ```
 su
 apt-get update
@@ -312,24 +313,24 @@ apt-get -y install npm
 npm install -g @bazel/bazelisk
 
 ```
-#grpc
+## grpc
 ```
 git clone -b v1.26.0 https://github.com/grpc/grpc
 cd grpc
 git submodule update --init
 nano src/core/lib/debug/trace.cc
 ```
-#CHANGE 
+### CHANGE 
 ```
 void TraceFlagList::Add(TraceFlag* flag) {
   flag->next_tracer_ = root_tracer_;
   root_tracer_ = flag;
 }
 ```
-#_CHANGE
+### _CHANGE
 ```
 ```
-#TO
+### TO
 ```
 void TraceFlagList::Add(TraceFlag* flag) {
   for (TraceFlag* t = root_tracer_; t != nullptr; t = t->next_tracer_) {
@@ -340,14 +341,14 @@ void TraceFlagList::Add(TraceFlag* flag) {
   flag->next_tracer_ = root_tracer_;
   root_tracer_ = flag;
 ```
-#_TO
+### _TO
 ```
 make
 make install
 cd ../
 
 ```
-#protobuf
+## protobuf
 ```
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.8.0/protobuf-cpp-3.8.0.tar.gz
 tar -xzvf protobuf-cpp-3.8.0.tar.gz
