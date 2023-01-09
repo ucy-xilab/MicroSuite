@@ -20,7 +20,7 @@ If you use this software in your work, we request that you cite the µSuite pape
 # Installation
 To install µSuite, please follow these steps (works on Ubuntu 18.04):
 
-(1) ** Setup docker, cli and compose **
+# (1) ** Setup docker, cli and compose **
 
 ```
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -28,7 +28,7 @@ DRY_RUN=1 sh ./get-docker.sh
 sudo sh get-docker.sh
 sudo apt -y install docker-compose
 ```
-# for saving docker login to be able to push images
+## for saving docker login to be able to push images
 ```
 sudo apt -y install gnupg2 pass 
 ```
@@ -44,7 +44,7 @@ sudo mount --rbind /dev/mkdocker /var/lib/docker
 sudo systemctl start docker
 ```
 
-(2) ** Create a docker instance using our precompiled docker image **
+# (2) ** Create a docker instance using our precompiled docker image **
 
 ```
 mkdir microsuite
@@ -70,7 +70,7 @@ docker-compose exec hdsearch sh
 
 From this point on we can execute each benchmark based on the commands provided in section (4)
 
-(3) ** Run a multinode execution **
+# (3) ** Run a multinode execution **
 
 # All following commands should be run only on Node 0
 # Close any docker-compose already running through the cloudlab profile
@@ -124,9 +124,9 @@ sudo docker stack rm microsuite
 sudo docker stack deploy --compose-file=docker-compose-swarm.yml microsuite
 ```
 
-(4) ** Run benchmarks **
+# (4) ** Run benchmarks **
 
-** HDSearch **
+# ** HDSearch **
 
 # Dataset for HDSearch
 ```
@@ -156,7 +156,7 @@ mkdir ./results
 
 ```
 
-** Router **
+# ** Router **
 
 # Dataset for Router
 ```
@@ -171,7 +171,7 @@ mv ./twitter_requests_data_set.txt /home
 service memcached restart
 
 ```
-#Lookup service command
+# Lookup service command
 ```
 cd /MicroSuite/src/Router/lookup_service/service
 ./lookup_server 0.0.0.0:50050 11211 -1 1
@@ -193,7 +193,7 @@ mkdir ./results
 ./load_generator_closed_loop /home/twitter_requests_data_set.dat ./results 30 1000 0.0.0.0:50051 1 1
 ```
 
-** SetAlgebra **
+# ** SetAlgebra **
 
 # Dataset for Set algebra
 ```
@@ -238,7 +238,7 @@ mkdir ./results
 ./load_generator_open_loop /home/setalgebra_query_set.txt ./results 30 1000 0.0.0.0:50051
 ```
 
-** Recommend **
+# ** Recommend **
 
 # Dataset for Recommend
 ```
