@@ -9,6 +9,8 @@ use Array::Diff;
 my $file = $ARGV[0]
     or die "Need to get CSV file on the command line\n";
 
+my $maxMoviesPerUser = 10;
+    
 read_as_hash($file);
 
 sub read_as_hash {
@@ -43,10 +45,12 @@ sub read_as_hash {
         my @usermovies = (keys %{$users{$user}});
         my %diff3 = %movies;
         delete @diff3{ @usermovies };
+        my $countMovies = 0;
         foreach my $movie (keys %diff3)
         {
-                my(@datarow) = ($user, $movie);
-                $csv->say ($fh, \@datarow);
+            my(@datarow) = ($user, $movie);
+            $csv->say ($fh, \@datarow);
+            last if ($countMovies++ == $maxMoviesPerUser);
         }
     }
 
