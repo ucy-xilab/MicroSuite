@@ -385,8 +385,7 @@ int main(int argc, char** argv) {
     }
     std::cout << "Warmup C6 Transitions: " << c6_counter << "\n";
     std::cout << "Warmup Troughput: " << responses_recvd->AtomicallyReadCount()  << "\n";
-
-    system("python3 /home/profiler.py -n node1 start");
+   
     //actual run
     c6_counter=0;
     index = rand() % queries_size;
@@ -457,7 +456,7 @@ int main(int argc, char** argv) {
 
         }
     }
-    system("python3 /home/profiler.py -n node1 stop");
+   
     myfile.close();
     myfile.open("/sys/devices/system/cpu/cpu" + cpu + "/cpuidle/state3/time");
     if (myfile) 
