@@ -482,3 +482,20 @@ make
 cd ../../load_generator/
 make
 ```
+# (6) ** Commands used to compile and run the single node client and midtier**
+### All benchmarks
+```
+To compile the single node client you must:
+1) rename the *_singlenode source code under benchmarkname/load_generator/ and benchmarkname/load_generator/helper_files to its original name (remove singlenode from name).
+2) make clean
+3) make
+
+To compile the single node mid_tier you must:
+1) rename the *_singlenode source code under benchmarkname/mid_tier/ to its original name (remove singlenode from name)
+2) make clean
+3) make
+
+To run single node experiments:
+- Nothing changes for mid_tier and bucket services for all benchmarks
+- Client accepts an additional parameter (last parameter). The core ID that the client will monitor for C6 entry/exit
+```
