@@ -9,6 +9,7 @@ This µSuite Fork has been amended by ALPS in order to achieve the following:
 - Provide instructions to compile and run docker and prepare a docker image with the complete µSuite for easier deployment
 - Provide instructions and the configuration to run the applications on single node using docker-compose.yaml
 - Provide intrusctions and the configuration to run the applications on multiple nodes using docker-compose-swarm.yml
+- Provide instructions and source code to run the application on single node allowing the system to enter c6.
 
 # License & Copyright
 µSuite is free software; you can redistribute it and/or modify it under the terms of the BSD License as published by the Open Source Initiative, revised version.
