@@ -1,0 +1,70 @@
+version: "3"
+services:
+  bucket:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50050"
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE0}"]
+    command: >
+        bash -c "wget https://akshithasriraman.eecs.umich.edu/dataset/SetAlgebra/wordIDs_mapped_to_posting_lists.txt
+                mv ./wordIDs_mapped_to_posting_lists.txt /home
+                rm /home/setalgebra_shrad*.txt;shrads_num=10;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/wordIDs_mapped_to_posting_lists.txt)+shrads_num-1))/shrads_num)) /home/wordIDs_mapped_to_posting_lists.txt /home/setalgebra_shrad
+                shuf -n 100 /home/wordIDs_mapped_to_posting_lists.txt > /home/setalgebra_query_set.txt
+                cd /MicroSuite/src/SetAlgebra/intersection_service/service/
+                ./intersection_server 0.0.0.0:50050 /home/setalgebra_shrad00.txt 1 1 1"
+
+  midtier:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50051"
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE1}"]
+    command: >
+        bash -c "cd /MicroSuite/src/SetAlgebra/union_service/service/
+                while ! echo exit | nc bucket 50050; do sleep 1; done
+                echo 'bucket launched'
+                touch lookup_servers_IP.txt
+                echo "bucket:50050" > lookup_servers_IP.txt
+                ./mid_tier_server 1 lookup_servers_IP.txt 0.0.0.0:50051 1 1 1"
+
+  client:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE2}"]
+    command: >
+        bash -c "wget https://akshithasriraman.eecs.umich.edu/dataset/SetAlgebra/wordIDs_mapped_to_posting_lists.txt
+                mv ./wordIDs_mapped_to_posting_lists.txt /home
+                shuf -n 100 /home/wordIDs_mapped_to_posting_lists.txt > /home/setalgebra_query_set.txt
+                while ! echo exit | nc midtier 50051; do sleep 1; done
+                echo 'midtier launched'
+                cd /MicroSuite/src/SetAlgebra/load_generator
+                mkdir ./results
+                ./load_generator_closed_loop /home/twitter_requests_data_set.dat ./results 30 1000 midtier:50051 1 1"

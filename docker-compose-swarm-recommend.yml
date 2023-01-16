@@ -1,0 +1,73 @@
+version: "3"
+services:
+  bucket:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50050"
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE0}"]
+    command: >
+        bash -c "wget https://www.mlpack.org/datasets/ml-20m/ratings-only.csv.gz
+                gunzip ratings-only.csv.gz
+                mv ./ratings-only.csv /home/user_to_movie_ratings.csv
+                rm /home/user_to_movie_ratings_shard*.txt;shards_num=100;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/user_to_movie_ratings.csv)+shards_num-1))/shards_num)) /home/user_to_movie_ratings.csv /home/user_to_movie_ratings_shard
+                cd /MicroSuite/src/Recommend/cf_service/service
+                ./cf_server /home/user_to_movie_ratings_shard00.txt 0.0.0.0:50050 1 1 0 1"
+
+  midtier:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50051"
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE1}"]
+    command: >
+        bash -c "cd /MicroSuite/src/SetAlgebra/union_service/service/
+                while ! echo exit | nc bucket 50050; do sleep 1; done
+                echo 'bucket launched'
+                touch lookup_servers_IP.txt
+                echo "bucket:50050" > lookup_servers_IP.txt
+                ./mid_tier_server 1 lookup_servers_IP.txt 0.0.0.0:50051 1 1 1"
+
+  client:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE2}"]
+    command: >
+        bash -c "wget https://www.mlpack.org/datasets/ml-20m/ratings-only.csv.gz
+                gunzip ratings-only.csv.gz
+                mv ./ratings-only.csv /home/user_to_movie_ratings.csv
+                perl missingmovies.pl /home/user_to_movie_ratings.csv
+                mv ./missingmovies.csv /home/missingmovies.csv
+                sed 1d /home/missingmovies.csv | shuf -n 100 > /home/recommend_query_set.csv
+                while ! echo exit | nc midtier 50051; do sleep 1; done
+                echo 'midtier launched'
+                cd /MicroSuite/src/Recommend/load_generator/
+                mkdir ./results
+                ./load_generator_open_loop /home/recommend_query_set.csv results 30 1 midtier:50051"

@@ -25,8 +25,9 @@ ssh -i ./.ssh/id_rsa.webmors -p 22 mklean@c220g1-030630.wisc.cloudlab.us
 sudo docker stack services microsuite
 
 # Check logs
-sudo docker service logs --raw microsuite_bucket
-sudo docker service logs --raw microsuite_midtier
+sudo docker service logs --raw -f microsuite_bucket
+sudo docker service logs --raw -f microsuite_midtier
+sudo docker service logs --raw -f microsuite_client
 
 # Check a service, e.g. client
 ssh node0

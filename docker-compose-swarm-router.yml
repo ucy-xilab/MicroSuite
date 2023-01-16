@@ -1,0 +1,69 @@
+version: "3"
+services:
+  bucket:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50050"
+        - "11211"
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE0}"]
+    command: >
+        bash -c "service memcached restart
+                cd /MicroSuite/src/Router/lookup_service/service
+                ./lookup_server 0.0.0.0:50050 11211 -1 1"
+
+  midtier:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    expose:
+        - "50051"
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE1}"]
+    command: >
+        bash -c "cd /MicroSuite/src/Router/mid_tier_service/service/
+                while ! echo exit | nc bucket 50050; do sleep 1; done
+                echo 'bucket launched'
+                touch lookup_servers_IP.txt
+                echo 'bucket:50050' > lookup_servers_IP.txt
+                ./mid_tier_server 1 lookup_servers_IP.txt 0.0.0.0:50051 1 1 1 1"
+
+  client:
+    image: mklean/baseline-microsuite:hdsearch_router_setalgebra_recommend
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+        - /microsuite/MicroSuite:/home/data
+    cap_add:
+        - SYS_PTRACE
+    deploy:
+        restart_policy:
+                condition: none
+        placement:
+                constraints: ["node.hostname == ${NODE2}"]
+    command: >
+        bash -c "wget https://akshithasriraman.eecs.umich.edu/dataset/Router/twitter_requests_data_set.dat
+                wget https://akshithasriraman.eecs.umich.edu/dataset/Router/twitter_requests_data_set.txt
+                mv ./twitter_requests_data_set.dat /home
+                mv ./twitter_requests_data_set.txt /home
+                while ! echo exit | nc midtier 50051; do sleep 1; done
+                echo 'midtier launched'
+                cd /MicroSuite/src/Router/load_generator
+                mkdir ./results
+                ./load_generator_open_loop /home/twitter_requests_data_set.dat ./results 30 10 midtier:50051 10 0"

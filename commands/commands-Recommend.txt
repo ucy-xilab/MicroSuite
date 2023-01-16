@@ -17,7 +17,7 @@ rm /home/user_to_movie_ratings_shard*.txt;shards_num=100;split -d --additional-s
 sudo apt-get install -y libtext-csv-perl
 
 # Run the script to produce the combinations of users and movies that have no rating
-perl missingmovies.pl ratings-only.csv
+perl missingmovies.pl /home/user_to_movie_ratings.csv
 # move the resulted file to hope
 mv ./missingmovies.csv /home/missingmovies.csv
 
