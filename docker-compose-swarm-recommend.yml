@@ -19,7 +19,7 @@ services:
         bash -c "wget https://www.mlpack.org/datasets/ml-20m/ratings-only.csv.gz
                 gunzip ratings-only.csv.gz
                 mv ./ratings-only.csv /home/user_to_movie_ratings.csv
-                rm /home/user_to_movie_ratings_shard*.txt;shards_num=100;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/user_to_movie_ratings.csv)+shards_num-1))/shards_num)) /home/user_to_movie_ratings.csv /home/user_to_movie_ratings_shard
+                rm /home/user_to_movie_ratings_shard*.txt;shards_num=100;split -d --additional-suffix=.txt -l $$(($$(($$(wc -l < /home/user_to_movie_ratings.csv)+shards_num-1))/shards_num)) /home/user_to_movie_ratings.csv /home/user_to_movie_ratings_shard
                 cd /MicroSuite/src/Recommend/cf_service/service
                 ./cf_server /home/user_to_movie_ratings_shard00.txt 0.0.0.0:50050 1 1 0 1"
 
