@@ -18,7 +18,7 @@ services:
     command: >
         bash -c "wget https://akshithasriraman.eecs.umich.edu/dataset/SetAlgebra/wordIDs_mapped_to_posting_lists.txt
                 mv ./wordIDs_mapped_to_posting_lists.txt /home
-                rm /home/setalgebra_shrad*.txt;shrads_num=10;split -d --additional-suffix=.txt -l $(($(($(wc -l < /home/wordIDs_mapped_to_posting_lists.txt)+shrads_num-1))/shrads_num)) /home/wordIDs_mapped_to_posting_lists.txt /home/setalgebra_shrad
+                rm /home/setalgebra_shrad*.txt;shrads_num=10;split -d --additional-suffix=.txt -l $$(($$(($$(wc -l < /home/wordIDs_mapped_to_posting_lists.txt)+shrads_num-1))/shrads_num)) /home/wordIDs_mapped_to_posting_lists.txt /home/setalgebra_shrad
                 shuf -n 100 /home/wordIDs_mapped_to_posting_lists.txt > /home/setalgebra_query_set.txt
                 cd /MicroSuite/src/SetAlgebra/intersection_service/service/
                 ./intersection_server 0.0.0.0:50050 /home/setalgebra_shrad00.txt 1 1 1"
